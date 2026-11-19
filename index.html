@@ -1,0 +1,1467 @@
+<!DOCTYPE html>
+<html lang="ur" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A&M Online Store | Complete E-Commerce Platform</title>
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧸</text></svg>">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+        .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+
+        /* AI Chatbot Floating Styles */
+        #ai-chat-btn {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            background: #4f46e5;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 26px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s ease;
+        }
+        #ai-chat-btn:hover { transform: scale(1.1); }
+
+        #ai-chat-box {
+            position: fixed;
+            bottom: 95px;
+            right: 25px;
+            width: 360px;
+            height: 520px;
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+            display: none;
+            flex-direction: column;
+            z-index: 9999;
+            overflow: hidden;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        #ai-chat-header {
+            background: #4f46e5;
+            color: white;
+            padding: 15px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 15px;
+        }
+
+        #ai-chat-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: #f9fafb;
+        }
+
+        .ai-msg {
+            padding: 10px 14px;
+            border-radius: 12px;
+            max-width: 85%;
+            font-size: 13px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .user-message {
+            background: #4f46e5;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 2px;
+        }
+        .ai-message {
+            background: #e5e7eb;
+            color: #1f2937;
+            align-self: flex-start;
+            border-bottom-left-radius: 2px;
+        }
+
+        #ai-chat-input-area {
+            display: flex;
+            padding: 12px;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            gap: 8px;
+            align-items: center;
+        }
+        #ai-user-input {
+            flex: 1;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            outline: none;
+            font-size: 13px;
+        }
+        #ai-send-btn {
+            background: #4f46e5;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        /* Loading Skeleton */
+        .skeleton {
+            animation: skeleton-loading 1s linear infinite alternate;
+        }
+        @keyframes skeleton-loading {
+            0% { background-color: hsl(200, 20%, 80%); }
+            100% { background-color: hsl(200, 20%, 95%); }
+        }
+    </style>
+
+    <!-- Firebase Compatibility SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <!-- Google Gen AI SDK -->
+    <script type="importmap">
+      {
+        "imports": {
+          "@google/genai": "https://esm.run/@google/genai"
+        }
+      }
+    </script>
+</head>
+<body class="bg-slate-900 text-gray-800 min-h-screen">
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed top-5 right-5 z-50 transform translate-x-full transition-transform duration-300 ease-in-out bg-emerald-600 text-white px-5 py-3 rounded-xl shadow-2xl font-semibold text-xs md:text-sm flex items-center space-x-2">
+        <span id="toastMsg">Notification message</span>
+    </div>
+
+    <!-- Header Navigation -->
+    <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md shadow-md border-b border-indigo-100">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <!-- Store Logo / Name -->
+            <div class="flex items-center space-x-2 cursor-pointer" onclick="switchSection('homeSection')">
+                <span class="text-3xl">🧸</span>
+                <div>
+                    <h1 class="font-black text-indigo-950 text-lg md:text-xl tracking-tight leading-none">A&M Online Store</h1>
+                    <p class="text-[10px] text-indigo-600 font-bold uppercase tracking-wider">Toys, Grocery, Stationery & Electronics</p>
+                </div>
+            </div>
+
+            <!-- Quick Access Header Nav -->
+            <div class="flex items-center space-x-2 md:space-x-3">
+                <button onclick="switchSection('wishlistSection')" class="bg-pink-50 hover:bg-pink-100 text-pink-600 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1 relative">
+                    <span>❤️ Wishlist</span>
+                    <span id="wishlistBadge" class="bg-pink-600 text-white text-[10px] px-1.5 py-0.2 rounded-full font-extrabold">0</span>
+                </button>
+
+                <button onclick="openAuthModal()" id="authNavBtn" class="bg-purple-100 hover:bg-purple-200 text-purple-700 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1">
+                    <span>👤 Login / Register</span>
+                </button>
+
+                <button onclick="openAdminLogin()" class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 rounded-xl text-xs font-bold transition shadow-md flex items-center space-x-1">
+                    <span>👨‍💼 Admin</span>
+                </button>
+
+                <button onclick="openCartModal()" class="relative bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-md flex items-center space-x-2">
+                    <span>🛒 Cart</span>
+                    <span id="cartBadge" class="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-extrabold">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER WITH MULTI-VIEW SECTIONS -->
+    <main class="max-w-7xl mx-auto px-4 py-6">
+
+        <!-- 🏠 HOME PAGE SECTION -->
+        <section id="homeSection" class="space-y-8">
+            
+            <!-- Hero Banner -->
+            <div class="bg-gradient-to-r from-indigo-700 via-purple-700 to-pink-600 rounded-3xl p-6 md:p-10 text-white shadow-2xl relative overflow-hidden flex flex-col items-center text-center space-y-4">
+                <span class="bg-white/20 text-white px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-widest backdrop-blur-sm">🎉 Welcome to A&M Store</span>
+                <h2 class="text-2xl md:text-5xl font-black tracking-tight drop-shadow-md">Toys, Grocery, Stationery & Electronics Delivered Fast!</h2>
+                <p class="text-indigo-100 text-xs md:text-sm max-w-xl">Cash on Delivery Available All Across Pakistan! Helpline: 03137221362</p>
+            </div>
+
+            <!-- Search Bar & Filters Section -->
+            <div class="glass-card rounded-3xl p-6 shadow-xl space-y-4 border border-white/20">
+                <h3 class="font-extrabold text-indigo-950 text-base md:text-lg flex items-center space-x-2">
+                    <span>🔎 Search & Filters</span>
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <!-- Search Input -->
+                    <div class="md:col-span-3 flex items-center bg-gray-100 rounded-2xl p-2 border border-gray-200 focus-within:border-indigo-600">
+                        <span class="px-3 text-gray-400">🔍</span>
+                        <input type="text" id="searchInput" onkeyup="applySearchAndFilters()" placeholder="Search Products by Name..." class="w-full text-xs md:text-sm bg-transparent focus:outline-none pr-2">
+                    </div>
+
+                    <!-- Category Filter -->
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-500 mb-1">Category Filter</label>
+                        <select id="filterCategory" onchange="applySearchAndFilters()" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold text-gray-700 focus:outline-none">
+                            <option value="All">All Categories</option>
+                            <option value="Toys">🧸 Toys</option>
+                            <option value="Grocery">🛒 Grocery</option>
+                            <option value="Stationery">📚 Stationery</option>
+                            <option value="Electronic Things">⚡ Electronic Things</option>
+                        </select>
+                    </div>
+
+                    <!-- Price Filter -->
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-500 mb-1">Price Filter (Max: <span id="priceVal">Rs 10,000</span>)</label>
+                        <input type="range" id="filterPrice" min="100" max="10000" step="100" value="10000" oninput="document.getElementById('priceVal').innerText='Rs '+this.value; applySearchAndFilters()" class="w-full accent-indigo-600">
+                    </div>
+
+                    <!-- Sort By -->
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-500 mb-1">Sort Products</label>
+                        <select id="sortBy" onchange="applySearchAndFilters()" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold text-gray-700 focus:outline-none">
+                            <option value="newest">Sort by Newest</option>
+                            <option value="priceLow">Sort by Price: Low to High</option>
+                            <option value="priceHigh">Sort by Price: High to Low</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category Fast Tabs -->
+            <div class="flex items-center space-x-2 overflow-x-auto pb-2 scrollbar-none" id="categoryTabs">
+                <button onclick="setCategoryTab('All')" class="cat-btn bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold transition shrink-0">All Items</button>
+                <button onclick="setCategoryTab('Toys')" class="cat-btn bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-xs font-bold transition shrink-0">🧸 Toys</button>
+                <button onclick="setCategoryTab('Grocery')" class="cat-btn bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-xs font-bold transition shrink-0">🛒 Grocery</button>
+                <button onclick="setCategoryTab('Stationery')" class="cat-btn bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-xs font-bold transition shrink-0">📚 Stationery</button>
+                <button onclick="setCategoryTab('Electronic Things')" class="cat-btn bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-xs font-bold transition shrink-0">⚡ Electronic Things</button>
+            </div>
+
+            <!-- Products Catalog -->
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-extrabold text-white text-lg md:text-xl drop-shadow">📦 Product Catalog</h3>
+                    <span id="productCount" class="text-indigo-200 text-xs font-semibold">Loading Firebase items...</span>
+                </div>
+
+                <!-- Grid & Loading State -->
+                <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    <div class="bg-white rounded-2xl p-4 space-y-3 skeleton h-64"></div>
+                    <div class="bg-white rounded-2xl p-4 space-y-3 skeleton h-64"></div>
+                    <div class="bg-white rounded-2xl p-4 space-y-3 skeleton h-64"></div>
+                    <div class="bg-white rounded-2xl p-4 space-y-3 skeleton h-64"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ❤️ WISHLIST SECTION -->
+        <section id="wishlistSection" class="hidden space-y-6">
+            <div class="glass-card rounded-3xl p-6 md:p-8 shadow-xl border border-white/20 space-y-6">
+                <div class="flex justify-between items-center border-b pb-4">
+                    <h2 class="text-xl md:text-2xl font-extrabold text-indigo-950">❤️ My Saved Wishlist</h2>
+                    <button onclick="switchSection('homeSection')" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold">← Back to Store</button>
+                </div>
+                <div id="wishlistGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
+            </div>
+        </section>
+
+        <!-- 👤 CUSTOMER ACCOUNT DASHBOARD SECTION -->
+        <section id="accountSection" class="hidden space-y-6">
+            <div class="glass-card rounded-3xl p-6 md:p-8 shadow-xl border border-white/20 space-y-6">
+                <div class="flex justify-between items-center border-b pb-4">
+                    <div>
+                        <h2 class="text-xl md:text-2xl font-extrabold text-indigo-950">👤 Customer Account Dashboard</h2>
+                        <p id="accountUserEmail" class="text-xs text-indigo-700 font-semibold mt-0.5">user@email.com</p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="switchSection('homeSection')" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold">← Back to Store</button>
+                        <button onclick="logoutUser()" class="bg-red-600 text-white px-4 py-2 rounded-xl text-xs font-bold">Logout 🚪</button>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <h3 class="font-extrabold text-gray-800 text-sm">📦 My Order History</h3>
+                    <div id="customerOrdersList" class="space-y-3">
+                        <p class="text-xs text-gray-500">Loading your orders...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 📜 POLICIES & SUPPORT FOOTER -->
+    <footer class="bg-slate-950 text-gray-400 py-10 mt-16 border-t border-slate-800 text-xs">
+        <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div class="space-y-3">
+                <div class="flex items-center space-x-2">
+                    <span class="text-2xl">🧸</span>
+                    <span class="font-extrabold text-white text-base">A&M Online Store</span>
+                </div>
+                <p class="text-gray-400 text-xs leading-relaxed">
+                    Toys, Grocery, Stationery, and Electronics delivered with Cash on Delivery across Pakistan. Website Link: https://azanmahan167.github.io/A-M-online-shop/
+                </p>
+            </div>
+
+            <div class="space-y-2">
+                <h4 class="font-bold text-white text-sm">💬 Support & Information</h4>
+                <ul class="space-y-1.5 text-gray-400">
+                    <li><a href="https://wa.me/923137221362" target="_blank" class="hover:text-emerald-400">WhatsApp Helpline: 03137221362</a></li>
+                    <li><button onclick="openPolicyModal('delivery')" class="hover:text-white">Delivery Information</button></li>
+                    <li><button onclick="openPolicyModal('cod')" class="hover:text-white">COD Information</button></li>
+                    <li><button onclick="openPolicyModal('faq')" class="hover:text-white">FAQ / Contact Us</button></li>
+                </ul>
+            </div>
+
+            <div class="space-y-2">
+                <h4 class="font-bold text-white text-sm">📜 Policies</h4>
+                <ul class="space-y-1.5 text-gray-400">
+                    <li><button onclick="openPolicyModal('return')" class="hover:text-white">Return & Refund Policy</button></li>
+                    <li><button onclick="openPolicyModal('cancellation')" class="hover:text-white">Cancellation Policy</button></li>
+                    <li><button onclick="openPolicyModal('shipping')" class="hover:text-white">Shipping Policy</button></li>
+                    <li><button onclick="openPolicyModal('privacy')" class="hover:text-white">Privacy Policy & Terms</button></li>
+                </ul>
+            </div>
+
+            <!-- Customer Message & Feedback Form Box -->
+            <div class="space-y-3">
+                <h4 class="font-bold text-white text-sm">✍️ Send Message / Feedback</h4>
+                <form onsubmit="submitCustomerMessage(event)" class="space-y-2">
+                    <input type="text" id="visitorName" required placeholder="Aap ka Naam..." class="w-full px-3 py-2 bg-slate-900 border border-slate-700 text-white rounded-xl text-xs focus:outline-none focus:border-indigo-500">
+                    <textarea id="visitorMsgText" required rows="2" placeholder="Apna message ya feedback yahan likhein..." class="w-full px-3 py-2 bg-slate-900 border border-slate-700 text-white rounded-xl text-xs focus:outline-none focus:border-indigo-500"></textarea>
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-xl transition text-xs shadow">
+                        Send Message 🚀
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="max-w-7xl mx-auto px-4 mt-8 pt-6 border-t border-slate-800 text-center text-gray-500 text-[11px]">
+            © 2026 A&M Online Store. All Rights Reserved. Fully Mobile & Laptop Responsive System.
+        </div>
+    </footer>
+
+    <!-- GEMINI API CONNECTED SMART AI CHATBOT -->
+    <button id="ai-chat-btn" onclick="toggleChat()">💬</button>
+
+    <div id="ai-chat-box">
+        <div id="ai-chat-header">
+            <span>A&M Smart Assistant 🤖</span>
+            <button onclick="toggleChat()" class="text-white text-lg font-bold">✕</button>
+        </div>
+        <div id="ai-chat-messages">
+            <div class="ai-msg ai-message">Assalam-o-Alaikum! 🧸 Main A&M Store ka Smart AI Assistant hoon. Toys, Grocery, Stationery ya Electronics items ke mutaliq koi bhi sawal poochein!</div>
+        </div>
+        <div id="ai-chat-input-area">
+            <input type="text" id="ai-user-input" placeholder="Message likhein (e.g. Toys dikhayein)..." onkeypress="if(event.key === 'Enter') sendMessage()">
+            <button id="ai-send-btn" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <!-- 🧸 PRODUCT DETAILS MODAL -->
+    <div id="productDetailModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl p-6 relative border border-gray-100">
+            <button onclick="closeProductDetailModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-2xl font-bold">&times;</button>
+            <div id="productDetailContent" class="space-y-4"></div>
+        </div>
+    </div>
+
+    <!-- 🛒 SHOPPING CART MODAL -->
+    <div id="cartModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-3xl max-w-lg w-full max-h-[85vh] overflow-y-auto shadow-2xl p-6 relative flex flex-col justify-between">
+            <div>
+                <div class="flex justify-between items-center mb-4 border-b pb-3 sticky top-0 bg-white z-10">
+                    <h2 class="text-xl font-extrabold text-indigo-950">🛒 Shopping Cart</h2>
+                    <button onclick="closeCartModal()" class="text-gray-400 hover:text-gray-700 text-2xl font-bold">&times;</button>
+                </div>
+                <div id="cartItemsList" class="space-y-3 mb-4"></div>
+            </div>
+
+            <!-- Cart Calculations -->
+            <div class="border-t pt-4 sticky bottom-0 bg-white space-y-3 text-xs">
+                <div class="space-y-1 border-t border-b py-2 text-gray-700">
+                    <div class="flex justify-between"><span>Subtotal:</span><span id="cartSubtotal">Rs 0</span></div>
+                    <div class="flex justify-between"><span>Delivery Charges:</span><span id="cartDelivery">Rs 40</span></div>
+                    <div class="flex justify-between text-indigo-950 font-black text-sm pt-1"><span>Final Total (COD):</span><span id="cartFinalTotal">Rs 40</span></div>
+                </div>
+
+                <div class="flex space-x-2">
+                    <button onclick="clearCart()" class="bg-red-100 hover:bg-red-200 text-red-600 font-bold py-2.5 px-3 rounded-xl transition">Clear Cart</button>
+                    <button onclick="openCheckoutModal()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl transition text-center">Proceed to Checkout 📦</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 📦 CHECKOUT MODAL (COD ONLY) -->
+    <div id="checkoutModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl p-6 relative max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h2 class="text-lg font-extrabold text-indigo-950">📦 Complete Order (Cash on Delivery)</h2>
+                <button onclick="closeCheckoutModal()" class="text-gray-400 hover:text-gray-700 text-2xl font-bold">&times;</button>
+            </div>
+            <form onsubmit="submitOrderToFirebase(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-semibold text-gray-700 mb-1">Customer Full Name:</label>
+                    <input type="text" id="custName" required placeholder="Aap ka Naam..." class="w-full px-3 py-2 rounded-xl border border-gray-300 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold text-gray-700 mb-1">WhatsApp Number:</label>
+                    <input type="tel" id="custPhone" required placeholder="03137221362..." class="w-full px-3 py-2 rounded-xl border border-gray-300 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold text-gray-700 mb-1">City:</label>
+                    <input type="text" id="custCity" required placeholder="Multan, Lahore, Karachi..." class="w-full px-3 py-2 rounded-xl border border-gray-300 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold text-gray-700 mb-1">Area / Sector:</label>
+                    <input type="text" id="custArea" required placeholder="Gulgasht, Model Town..." class="w-full px-3 py-2 rounded-xl border border-gray-300 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold text-gray-700 mb-1">Complete Address:</label>
+                    <textarea id="custAddress" rows="2" required placeholder="House No, Street, Landmark..." class="w-full px-3 py-2 rounded-xl border border-gray-300 focus:outline-none"></textarea>
+                </div>
+
+                <!-- Summary Box -->
+                <div class="p-3 bg-indigo-50 rounded-xl space-y-1 font-semibold text-indigo-950">
+                    <p>Payment Method: <strong>Cash on Delivery (COD)</strong></p>
+                    <p>Total Order Value: <strong id="checkoutTotalVal">Rs 40</strong></p>
+                </div>
+
+                <button type="submit" id="placeOrderBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow cursor-pointer text-sm">
+                    Place Order Now 🚀
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 🔑 CUSTOMER LOGIN / REGISTER MODAL -->
+    <div id="authModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl p-6 relative">
+            <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-2xl font-bold">&times;</button>
+            
+            <div class="text-center mb-4">
+                <span class="text-3xl">🧸</span>
+                <h3 id="authModalTitle" class="text-lg font-extrabold text-indigo-950 mt-1">Customer Login</h3>
+                <p class="text-xs text-gray-500">Access your wishlist and order history</p>
+            </div>
+
+            <!-- Tab Switcher for Login / Register -->
+            <div class="flex bg-gray-100 p-1 rounded-2xl mb-4 text-xs font-bold">
+                <button type="button" onclick="switchAuthTab('login')" id="tabLoginBtn" class="flex-1 py-2 rounded-xl bg-white shadow text-indigo-950 transition">Login</button>
+                <button type="button" onclick="switchAuthTab('register')" id="tabRegisterBtn" class="flex-1 py-2 rounded-xl text-gray-500 transition">Register</button>
+            </div>
+
+            <!-- Auth Form -->
+            <form onsubmit="handleAuthSubmit(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-semibold text-gray-700 mb-1">Email Address:</label>
+                    <input type="email" id="authEmail" required placeholder="name@example.com" class="w-full px-3 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:border-indigo-600">
+                </div>
+                <div>
+                    <label class="block font-semibold text-gray-700 mb-1">Password:</label>
+                    <input type="password" id="authPassword" required placeholder="••••••••" class="w-full px-3 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:border-indigo-600">
+                </div>
+                
+                <button type="submit" id="authSubmitBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow transition text-sm">
+                    Login to Account 🚀
+                </button>
+            </form>
+
+            <div class="relative my-4 text-center">
+                <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200"></div></div>
+                <span class="relative bg-white px-3 text-[11px] text-gray-500 font-semibold uppercase">Or continue with</span>
+            </div>
+
+            <button onclick="loginWithGoogle()" class="w-full flex items-center justify-center space-x-2 border border-gray-300 hover:bg-gray-50 py-2.5 rounded-xl font-bold text-gray-700 transition text-xs shadow-sm">
+                <span>🌐 Sign in with Google</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 👨‍💼 ADMIN PANEL MODAL -->
+    <div id="adminModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl p-6 relative">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h2 class="text-lg font-extrabold text-indigo-950">👨‍💼 Firebase Secure Admin Control Panel</h2>
+                <button onclick="closeAdminModal()" class="text-gray-400 hover:text-gray-700 text-2xl font-bold">&times;</button>
+            </div>
+
+            <!-- Admin Login Form -->
+            <div id="adminLoginForm" class="space-y-3 text-xs max-w-sm mx-auto py-8">
+                <p class="text-gray-600 font-medium text-center">Secure Admin Login Access</p>
+                <input type="password" id="adminPassInput" placeholder="Enter Admin Password..." class="w-full px-3 py-2 rounded-xl border border-gray-300 focus:outline-none">
+                <button onclick="verifyAdmin()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl transition shadow">Login</button>
+            </div>
+
+            <!-- Admin Dashboard -->
+            <div id="adminDashboard" class="hidden space-y-6 text-xs">
+                
+                <!-- Metrics Bar -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div class="bg-indigo-50 p-3 rounded-2xl border border-indigo-100 text-center">
+                        <p class="text-gray-500 font-bold">Total Orders</p>
+                        <p id="metricTotalOrders" class="text-xl font-black text-indigo-900">0</p>
+                    </div>
+                    <div class="bg-emerald-50 p-3 rounded-2xl border border-emerald-100 text-center">
+                        <p class="text-gray-500 font-bold">Total Sales</p>
+                        <p id="metricTotalSales" class="text-xl font-black text-emerald-900">Rs 0</p>
+                    </div>
+                    <div class="bg-amber-50 p-3 rounded-2xl border border-amber-100 text-center">
+                        <p class="text-gray-500 font-bold">Pending Orders</p>
+                        <p id="metricPendingOrders" class="text-xl font-black text-amber-900">0</p>
+                    </div>
+                    <div class="bg-blue-50 p-3 rounded-2xl border border-blue-100 text-center">
+                        <p class="text-gray-500 font-bold">Customer Messages</p>
+                        <p id="metricTotalMessages" class="text-xl font-black text-blue-900">0</p>
+                    </div>
+                </div>
+
+                <!-- Admin Tabs Nav -->
+                <div class="flex border-b border-gray-200 pb-2 space-x-2 overflow-x-auto">
+                    <button onclick="switchAdminTab('orders')" id="admTabOrders" class="px-3 py-2 rounded-xl font-bold bg-indigo-600 text-white shrink-0">📦 Orders</button>
+                    <button onclick="switchAdminTab('products')" id="admTabProds" class="px-3 py-2 rounded-xl font-bold bg-gray-100 text-gray-700 shrink-0">🧸 Products</button>
+                    <button onclick="switchAdminTab('messages')" id="admTabMsgs" class="px-3 py-2 rounded-xl font-bold bg-gray-100 text-gray-700 shrink-0">💬 Messages (<span id="msgTabBadge">0</span>)</button>
+                    <button onclick="switchAdminTab('settings')" id="admTabSettings" class="px-3 py-2 rounded-xl font-bold bg-gray-100 text-gray-700 shrink-0">⚙️ Settings</button>
+                </div>
+
+                <!-- Manage Orders Tab -->
+                <div id="admSectionOrders" class="space-y-3">
+                    <h3 class="font-extrabold text-gray-800 text-sm">Customer Orders Management</h3>
+                    <div id="adminOrdersList" class="space-y-3 max-h-96 overflow-y-auto"></div>
+                </div>
+
+                <!-- Manage Products Tab -->
+                <div id="admSectionProducts" class="space-y-4 hidden">
+                    <h3 class="font-extrabold text-gray-800 text-sm">Add New Product to Store (Auto-Synced with Firebase Firestore & AI)</h3>
+                    <form onsubmit="addNewProductToFirebase(event)" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <input type="text" id="newProdName" required placeholder="Product Name..." class="px-3 py-2 rounded-xl border">
+                        <input type="text" id="newProdPrice" required placeholder="Price (e.g. 1500)..." class="px-3 py-2 rounded-xl border">
+                        <input type="text" id="newProdSalePrice" placeholder="Sale Price (Optional)..." class="px-3 py-2 rounded-xl border">
+                        <select id="newProdCategory" class="px-3 py-2 rounded-xl border font-bold text-indigo-900">
+                            <option value="Toys">🧸 Toys</option>
+                            <option value="Grocery">🛒 Grocery</option>
+                            <option value="Stationery">📚 Stationery</option>
+                            <option value="Electronic Things">⚡ Electronic Things</option>
+                        </select>
+                        <select id="newProdStock" class="px-3 py-2 rounded-xl border">
+                            <option value="In Stock">In Stock</option>
+                            <option value="Out of Stock">Out of Stock</option>
+                        </select>
+                        <textarea id="newProdDesc" placeholder="Product Description..." class="md:col-span-2 px-3 py-2 rounded-xl border" rows="2"></textarea>
+                        <input type="file" id="newProdFile" accept="image/*" required class="md:col-span-2 text-xs">
+                        <button type="submit" id="saveProdBtn" class="md:col-span-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl transition">
+                            Publish Product to Firebase Firestore 🚀
+                        </button>
+                    </form>
+
+                    <h4 class="font-extrabold text-gray-800 border-t pt-3">Existing Store Inventory</h4>
+                    <div id="adminProductList" class="space-y-2 max-h-60 overflow-y-auto"></div>
+                </div>
+
+                <!-- Customer Messages / Feedback Tab -->
+                <div id="admSectionMessages" class="space-y-3 hidden">
+                    <h3 class="font-extrabold text-gray-800 text-sm">Customer Messages & Feedback Inbox</h3>
+                    <div id="adminMessagesList" class="space-y-3 max-h-96 overflow-y-auto"></div>
+                </div>
+
+                <!-- Settings & Delivery Tab -->
+                <div id="admSectionSettings" class="space-y-4 hidden">
+                    <div class="p-4 bg-gray-50 rounded-2xl border space-y-2">
+                        <h4 class="font-bold">Delivery Charges Settings</h4>
+                        <div class="flex space-x-2">
+                            <input type="number" id="settingDeliveryFee" value="40" class="px-3 py-1.5 border rounded-xl w-32">
+                            <button onclick="saveDeliveryFee()" class="bg-indigo-600 text-white font-bold px-3 py-1.5 rounded-xl">Save Fee</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- GENERAL POLICY MODAL -->
+    <div id="policyModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl p-6 relative">
+            <div class="flex justify-between items-center border-b pb-3 mb-3">
+                <h3 id="policyModalTitle" class="font-extrabold text-indigo-950 text-base">Policy Title</h3>
+                <button onclick="closePolicyModal()" class="text-gray-400 hover:text-gray-700 text-2xl font-bold">&times;</button>
+            </div>
+            <div id="policyModalText" class="text-xs text-gray-700 space-y-2 leading-relaxed"></div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT APPLICATION LOGIC -->
+    <script type="module">
+        import { GoogleGenAI } from "@google/genai";
+
+        // GEMINI API INITIALIZATION
+        const ai = new GoogleGenAI({ apiKey: "AQ.Ab8RN6JMXCU0G4TACCvFBxm0v-CTQUOddnFHsAEOpqk_8fBGBw" });
+
+        // FIREBASE INITIALIZATION
+        const firebaseConfig = {
+            apiKey: "AQ.Ab8RN6JMXCU0G4TACCvFBxm0v-CTQUOddnFHsAEOpqk_8fBGBw",
+            authDomain: "am-store-8de76.firebaseapp.com",
+            projectId: "am-store-8de76",
+            storageBucket: "am-store-8de76.firebasestorage.app",
+            messagingSenderId: "1091157278308",
+            appId: "1:1091157278308:web:24985147ea761ca2e8a971",
+            measurementId: "G-Q9NCWD7LEM"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        // GLOBAL APP STATE
+        let products = [];
+        let orders = [];
+        let messagesList = [];
+        let cart = JSON.parse(localStorage.getItem('am_cart_items')) || [];
+        let wishlist = JSON.parse(localStorage.getItem('am_wishlist_items')) || [];
+        let deliveryFee = 40; // Delivery charges set to 40
+        let activeTabCategory = 'All';
+        let currentUser = null;
+        let authMode = 'login'; // 'login' or 'register'
+
+        window.onload = function() {
+            listenToFirebaseProducts();
+            listenToFirebaseOrders();
+            listenToFirebaseMessages();
+            updateCartBadge();
+            updateWishlistBadge();
+
+            // Firebase Auth State Listener
+            auth.onAuthStateChanged(user => {
+                currentUser = user;
+                updateAuthHeaderUI();
+                if (user) {
+                    loadCustomerOrders(user.uid);
+                }
+            });
+        };
+
+        // NAVIGATION CONTROL
+        window.switchSection = function(sectionId) {
+            document.getElementById('homeSection').classList.add('hidden');
+            document.getElementById('wishlistSection').classList.add('hidden');
+            document.getElementById('accountSection').classList.add('hidden');
+            
+            document.getElementById(sectionId).classList.remove('hidden');
+            if(sectionId === 'wishlistSection') renderWishlistGrid();
+            if(sectionId === 'accountSection' && currentUser) loadCustomerOrders(currentUser.uid);
+        }
+
+        window.showToast = function(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            toast.classList.remove('translate-x-full');
+            setTimeout(() => { toast.classList.add('translate-x-full'); }, 3000);
+        }
+
+        // FIREBASE SYNC
+        function listenToFirebaseProducts() {
+            db.collection("toys").orderBy("createdAt", "desc").onSnapshot(snapshot => {
+                products = [];
+                snapshot.forEach(doc => {
+                    let data = doc.data();
+                    if (!data.category || data.category.trim() === "") {
+                        data.category = "Toys";
+                    }
+                    products.push({ id: doc.id, ...data });
+                });
+                applySearchAndFilters();
+                renderAdminProductList();
+            }, err => console.error(err));
+        }
+
+        function listenToFirebaseOrders() {
+            db.collection("orders").orderBy("createdAt", "desc").onSnapshot(snapshot => {
+                orders = [];
+                snapshot.forEach(doc => {
+                    orders.push({ id: doc.id, ...doc.data() });
+                });
+                renderAdminOrders();
+                calculateAdminMetrics();
+                if (currentUser) loadCustomerOrders(currentUser.uid);
+            });
+        }
+
+        function listenToFirebaseMessages() {
+            db.collection("messages").orderBy("createdAt", "desc").onSnapshot(snapshot => {
+                messagesList = [];
+                snapshot.forEach(doc => {
+                    messagesList.push({ id: doc.id, ...doc.data() });
+                });
+                renderAdminMessages();
+                document.getElementById('metricTotalMessages').innerText = messagesList.length;
+                document.getElementById('msgTabBadge').innerText = messagesList.length;
+            });
+        }
+
+        // CUSTOMER AUTHENTICATION SYSTEM
+        window.openAuthModal = function() {
+            if (currentUser) {
+                switchSection('accountSection');
+            } else {
+                document.getElementById('authModal').classList.remove('hidden');
+            }
+        }
+        window.closeAuthModal = function() { document.getElementById('authModal').classList.add('hidden'); }
+
+        window.switchAuthTab = function(mode) {
+            authMode = mode;
+            const title = document.getElementById('authModalTitle');
+            const btn = document.getElementById('authSubmitBtn');
+            const loginBtn = document.getElementById('tabLoginBtn');
+            const regBtn = document.getElementById('tabRegisterBtn');
+
+            if (mode === 'login') {
+                title.innerText = 'Customer Login';
+                btn.innerText = 'Login to Account 🚀';
+                loginBtn.className = 'flex-1 py-2 rounded-xl bg-white shadow text-indigo-950 transition';
+                regBtn.className = 'flex-1 py-2 rounded-xl text-gray-500 transition';
+            } else {
+                title.innerText = 'Create New Account';
+                btn.innerText = 'Register Account 🚀';
+                regBtn.className = 'flex-1 py-2 rounded-xl bg-white shadow text-indigo-950 transition';
+                loginBtn.className = 'flex-1 py-2 rounded-xl text-gray-500 transition';
+            }
+        }
+
+        window.handleAuthSubmit = function(e) {
+            e.preventDefault();
+            const email = document.getElementById('authEmail').value;
+            const password = document.getElementById('authPassword').value;
+
+            if (authMode === 'login') {
+                auth.signInWithEmailAndPassword(email, password)
+                    .then(res => {
+                        closeAuthModal();
+                        showToast(`Welcome back, ${res.user.email}!`);
+                        switchSection('accountSection');
+                    })
+                    .catch(err => showToast("Login Error: " + err.message));
+            } else {
+                auth.createUserWithEmailAndPassword(email, password)
+                    .then(res => {
+                        closeAuthModal();
+                        showToast(`Account created successfully! Welcome.`);
+                        switchSection('accountSection');
+                    })
+                    .catch(err => showToast("Registration Error: " + err.message));
+            }
+        }
+
+        window.loginWithGoogle = function() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider)
+                .then(res => {
+                    closeAuthModal();
+                    showToast(`Successfully signed in with Google!`);
+                    switchSection('accountSection');
+                })
+                .catch(err => showToast("Google Sign-In Error: " + err.message));
+        }
+
+        window.logoutUser = function() {
+            auth.signOut().then(() => {
+                showToast("Logged out successfully!");
+                switchSection('homeSection');
+            });
+        }
+
+        function updateAuthHeaderUI() {
+            const navBtn = document.getElementById('authNavBtn');
+            if (currentUser) {
+                navBtn.innerHTML = `<span>👤 My Account</span>`;
+                document.getElementById('accountUserEmail').innerText = currentUser.email;
+            } else {
+                navBtn.innerHTML = `<span>👤 Login / Register</span>`;
+            }
+        }
+
+        function loadCustomerOrders(uid) {
+            const container = document.getElementById('customerOrdersList');
+            if (!container) return;
+            
+            const userOrders = orders.filter(o => o.userId === uid || (currentUser && o.email === currentUser.email));
+            
+            if (userOrders.length === 0) {
+                container.innerHTML = `<p class="text-xs text-gray-500 bg-gray-50 p-4 rounded-xl border">You haven't placed any orders yet.</p>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            userOrders.forEach(ord => {
+                let itemsHtml = '';
+                if (ord.items) {
+                    ord.items.forEach(it => {
+                        itemsHtml += `<span class="bg-indigo-50 text-indigo-800 text-[10px] font-bold px-2 py-0.5 rounded mr-1">${it.name} (x${it.qty})</span>`;
+                    });
+                }
+                container.innerHTML += `
+                    <div class="bg-gray-50 p-4 rounded-2xl border text-xs space-y-2">
+                        <div class="flex justify-between font-bold text-indigo-950">
+                            <span>Order ID: ${ord.orderId || ord.id}</span>
+                            <span class="text-emerald-600">${ord.status || 'Pending'}</span>
+                        </div>
+                        <p class="text-gray-600">Total Amount: <strong>Rs ${ord.totalAmount}</strong> | Payment: Cash on Delivery</p>
+                        <div><p class="font-semibold text-gray-700 mb-1">Items:</p><div>${itemsHtml}</div></div>
+                    </div>
+                `;
+            });
+        }
+
+        // CUSTOMER MESSAGE SUBMISSION
+        window.submitCustomerMessage = function(e) {
+            e.preventDefault();
+            let name = document.getElementById('visitorName').value;
+            let msgText = document.getElementById('visitorMsgText').value;
+
+            db.collection("messages").add({
+                name: name,
+                message: msgText,
+                userId: currentUser ? currentUser.uid : 'guest',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                document.getElementById('visitorName').value = '';
+                document.getElementById('visitorMsgText').value = '';
+                showToast("Aap ka message admin tak pohch gaya hai! Shukriya.");
+            }).catch(err => {
+                showToast("Message bhejne mein masla hua.");
+            });
+        }
+
+        // RENDER PRODUCTS & FILTERS
+        window.applySearchAndFilters = function() {
+            let searchQ = document.getElementById('searchInput').value.toLowerCase();
+            let categoryQ = document.getElementById('filterCategory').value;
+            let maxPrice = parseInt(document.getElementById('filterPrice').value);
+            let sortQ = document.getElementById('sortBy').value;
+
+            let filtered = products.filter(p => {
+                let pPrice = parseInt((p.salePrice || p.price).toString().replace(/[^0-9]/g, '')) || 0;
+                let matchesSearch = p.name.toLowerCase().includes(searchQ);
+                let matchesCat = (categoryQ === 'All') || (p.category === categoryQ);
+                let matchesPrice = pPrice <= maxPrice;
+
+                let matchesTab = (activeTabCategory === 'All') || (p.category === activeTabCategory);
+
+                return matchesSearch && matchesCat && matchesPrice && matchesTab;
+            });
+
+            if(sortQ === 'priceLow') {
+                filtered.sort((a,b) => parseInt((a.salePrice||a.price).toString().replace(/[^0-9]/g, '')) - parseInt((b.salePrice||b.price).toString().replace(/[^0-9]/g, '')));
+            } else if(sortQ === 'priceHigh') {
+                filtered.sort((a,b) => parseInt((b.salePrice||b.price).toString().replace(/[^0-9]/g, '')) - parseInt((a.salePrice||a.price).toString().replace(/[^0-9]/g, '')));
+            }
+
+            renderProductsGrid(filtered);
+        }
+
+        window.setCategoryTab = function(tabName) {
+            activeTabCategory = tabName;
+            document.getElementById('filterCategory').value = tabName;
+            applySearchAndFilters();
+        }
+
+        function renderProductsGrid(list) {
+            const grid = document.getElementById('productGrid');
+            grid.innerHTML = '';
+            
+            if (list.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center text-white text-xs py-12">No products found matching your filters.</div>`;
+                document.getElementById('productCount').innerText = `Showing 0 items`;
+                return;
+            }
+
+            list.forEach(prod => {
+                let isWish = wishlist.some(w => w.id === prod.id);
+                grid.innerHTML += `
+                    <div class="glass-card rounded-2xl overflow-hidden shadow-lg border border-white/20 flex flex-col justify-between transition transform hover:-translate-y-1">
+                        <div class="relative">
+                            <img src="${prod.image}" alt="${prod.name}" class="w-full h-44 object-cover cursor-pointer" onclick="viewProductDetails('${prod.id}')">
+                            
+                            <!-- Download Picture Button (Top-Left) -->
+                            <button onclick="downloadProductImage('${prod.image}', '${prod.name}')" title="Download Image" class="absolute top-2 left-2 bg-indigo-600/90 hover:bg-indigo-700 text-white p-1.5 rounded-full text-xs shadow-md transition hover:scale-110 flex items-center justify-center">
+                                📥
+                            </button>
+
+                            <!-- Wishlist Button (Top-Right) -->
+                            <button onclick="toggleWishlist('${prod.id}')" class="absolute top-2 right-2 bg-white/80 p-1.5 rounded-full text-sm hover:scale-110 transition">
+                                ${isWish ? '❤️' : '🤍'}
+                            </button>
+
+                            <span class="absolute bottom-2 left-2 bg-indigo-900/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">${prod.category || 'Toys'}</span>
+                        </div>
+                        <div class="p-4 flex-1 flex flex-col justify-between">
+                            <div>
+                                <h4 class="font-bold text-gray-900 text-sm hover:text-indigo-600 cursor-pointer" onclick="viewProductDetails('${prod.id}')">${prod.name}</h4>
+                                <div class="flex items-center space-x-2 mt-1">
+                                    ${prod.salePrice ? `<span class="text-emerald-600 font-black text-sm">${prod.salePrice}</span><span class="text-gray-400 line-through text-xs">${prod.price}</span>` : `<span class="text-indigo-950 font-black text-sm">${prod.price}</span>`}
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 mt-3">
+                                <button onclick="addToCart('${prod.id}')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-xl text-[11px] transition">Add to Cart</button>
+                                <button onclick="buyNow('${prod.id}')" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 rounded-xl text-[11px] transition">Buy Now</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('productCount').innerText = `Showing ${list.length} items`;
+        }
+
+        // IMAGE DOWNLOAD FUNCTIONALITY
+        window.downloadProductImage = function(imgUrl, prodName) {
+            let cleanName = prodName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+            
+            // Agar image base64 format mein hai ya normal URL hai
+            if (imgUrl.startsWith('data:')) {
+                let a = document.createElement('a');
+                a.href = imgUrl;
+                a.download = `${cleanName}_image.jpg`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                showToast("Product image downloads mein save ho gayi!");
+            } else {
+                // External image fetch karke download karne ke liye
+                fetch(imgUrl)
+                    .then(response => response.blob())
+                    .then(blob => {
+                        let blobUrl = window.URL.createObjectURL(blob);
+                        let a = document.createElement('a');
+                        a.href = blobUrl;
+                        a.download = `${cleanName}_image.jpg`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        window.URL.revokeObjectURL(blobUrl);
+                        showToast("Product image downloads mein save ho gayi!");
+                    })
+                    .catch(err => {
+                        // Fallback agar direct link ho
+                        let a = document.createElement('a');
+                        a.href = imgUrl;
+                        a.target = '_blank';
+                        a.download = `${cleanName}_image.jpg`;
+                        a.click();
+                        showToast("Image download link open ho gaya hai!");
+                    });
+            }
+        }
+
+        window.viewProductDetails = function(id) {
+            let prod = products.find(p => p.id === id);
+            if (!prod) return;
+
+            let content = document.getElementById('productDetailContent');
+            content.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="relative">
+                        <img src="${prod.image}" class="w-full h-64 object-cover rounded-2xl">
+                        <button onclick="downloadProductImage('${prod.image}', '${prod.name}')" class="absolute top-3 left-3 bg-indigo-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow flex items-center space-x-1">
+                            <span>📥 Download Image</span>
+                        </button>
+                    </div>
+                    <div class="space-y-3">
+                        <span class="bg-indigo-100 text-indigo-800 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase">${prod.category || 'Toys'}</span>
+                        <h3 class="text-xl font-extrabold text-indigo-950">${prod.name}</h3>
+                        <p class="text-xs text-gray-600">${prod.description || 'High quality item available at A&M Online Store.'}</p>
+                        <div class="text-xs text-gray-500 space-y-1">
+                            <p><strong>Stock Status:</strong> <span class="${(prod.stockStatus === 'Out of Stock' || prod.stockAvailable === false) ? 'text-red-600' : 'text-emerald-600'} font-bold">${prod.stockStatus || (prod.stockAvailable === false ? 'Out of Stock' : 'In Stock')}</span></p>
+                        </div>
+                        <div class="text-lg font-black text-indigo-900">${prod.salePrice || prod.price}</div>
+                        <div class="flex space-x-2 pt-2">
+                            <button onclick="addToCart('${prod.id}'); closeProductDetailModal();" class="flex-1 bg-indigo-600 text-white font-bold py-2.5 rounded-xl text-xs">Add to Cart 🛒</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('productDetailModal').classList.remove('hidden');
+        }
+        window.closeProductDetailModal = function() { document.getElementById('productDetailModal').classList.add('hidden'); }
+
+        // CART LOGIC
+        window.addToCart = function(id) {
+            let prod = products.find(p => p.id === id);
+            if (!prod) return;
+            if (prod.stockStatus === "Out of Stock" || prod.stockAvailable === false) {
+                return showToast("Afsos, yeh product Out of Stock hai!");
+            }
+            let existing = cart.find(item => item.id === id);
+            if (existing) { existing.qty += 1; } else { cart.push({ ...prod, qty: 1 }); }
+            saveCart();
+            showToast(`${prod.name} added to cart!`);
+        }
+
+        window.buyNow = function(id) {
+            addToCart(id);
+            openCartModal();
+        }
+
+        function saveCart() {
+            localStorage.setItem('am_cart_items', JSON.stringify(cart));
+            updateCartBadge();
+            renderCartItems();
+        }
+
+        function updateCartBadge() {
+            let count = cart.reduce((sum, item) => sum + item.qty, 0);
+            document.getElementById('cartBadge').innerText = count;
+        }
+
+        window.openCartModal = function() { renderCartItems(); document.getElementById('cartModal').classList.remove('hidden'); }
+        window.closeCartModal = function() { document.getElementById('cartModal').classList.add('hidden'); }
+
+        function renderCartItems() {
+            let list = document.getElementById('cartItemsList');
+            list.innerHTML = '';
+            let subtotal = 0;
+
+            if (cart.length === 0) {
+                list.innerHTML = `<p class="text-center text-gray-400 py-6 text-xs">Your cart is completely empty.</p>`;
+            } else {
+                cart.forEach((item, index) => {
+                    let priceVal = parseInt((item.salePrice || item.price).toString().replace(/[^0-9]/g, '')) || 0;
+                    subtotal += priceVal * item.qty;
+
+                    list.innerHTML += `
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl border text-xs">
+                            <div class="flex items-center space-x-3">
+                                <img src="${item.image}" class="w-10 h-10 object-cover rounded-lg">
+                                <div>
+                                    <h5 class="font-bold text-gray-800">${item.name}</h5>
+                                    <p class="text-indigo-700 font-semibold">${item.salePrice || item.price}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <button onclick="changeQty(${index}, -1)" class="bg-gray-200 w-6 h-6 rounded font-bold">-</button>
+                                <span class="font-bold">${item.qty}</span>
+                                <button onclick="changeQty(${index}, 1)" class="bg-gray-200 w-6 h-6 rounded font-bold">+</button>
+                                <button onclick="removeFromCart(${index})" class="text-red-500 font-bold ml-2">🗑️</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            let finalTotal = subtotal > 0 ? (subtotal + deliveryFee) : 0;
+
+            document.getElementById('cartSubtotal').innerText = `Rs ${subtotal.toLocaleString()}`;
+            document.getElementById('cartDelivery').innerText = `Rs ${subtotal > 0 ? deliveryFee : 0}`;
+            document.getElementById('cartFinalTotal').innerText = `Rs ${finalTotal.toLocaleString()}`;
+            document.getElementById('checkoutTotalVal').innerText = `Rs ${finalTotal.toLocaleString()}`;
+        }
+
+        window.changeQty = function(index, delta) {
+            cart[index].qty += delta;
+            if (cart[index].qty <= 0) cart.splice(index, 1);
+            saveCart();
+        }
+
+        window.removeFromCart = function(index) { cart.splice(index, 1); saveCart(); }
+        window.clearCart = function() { cart = []; saveCart(); }
+
+        // WISHLIST LOGIC
+        window.toggleWishlist = function(id) {
+            let index = wishlist.findIndex(w => w.id === id);
+            if (index > -1) {
+                wishlist.splice(index, 1);
+                showToast("Removed from wishlist");
+            } else {
+                let prod = products.find(p => p.id === id);
+                if (prod) wishlist.push(prod);
+                showToast("Added to wishlist ❤️");
+            }
+            localStorage.setItem('am_wishlist_items', JSON.stringify(wishlist));
+            updateWishlistBadge();
+            applySearchAndFilters();
+        }
+
+        function updateWishlistBadge() { document.getElementById('wishlistBadge').innerText = wishlist.length; }
+
+        function renderWishlistGrid() {
+            const grid = document.getElementById('wishlistGrid');
+            grid.innerHTML = '';
+            if (wishlist.length === 0) {
+                grid.innerHTML = `<p class="col-span-full text-center text-gray-500 text-xs py-8">Wishlist is empty.</p>`;
+                return;
+            }
+            wishlist.forEach(prod => {
+                grid.innerHTML += `
+                    <div class="bg-white p-4 rounded-2xl shadow border flex flex-col justify-between">
+                        <img src="${prod.image}" class="w-full h-32 object-cover rounded-xl mb-2">
+                        <h4 class="font-bold text-xs">${prod.name}</h4>
+                        <p class="text-indigo-600 font-extrabold text-xs">${prod.price}</p>
+                        <button onclick="addToCart('${prod.id}')" class="bg-indigo-600 text-white font-bold py-1.5 rounded-xl text-xs mt-2">Move to Cart</button>
+                    </div>
+                `;
+            });
+        }
+
+        // CHECKOUT & ORDERS
+        window.openCheckoutModal = function() {
+            if (cart.length === 0) return showToast("Cart is empty!");
+            closeCartModal();
+            document.getElementById('checkoutModal').classList.remove('hidden');
+        }
+        window.closeCheckoutModal = function() { document.getElementById('checkoutModal').classList.add('hidden'); }
+
+        window.submitOrderToFirebase = function(e) {
+            e.preventDefault();
+            let name = document.getElementById('custName').value;
+            let phone = document.getElementById('custPhone').value;
+            let city = document.getElementById('custCity').value;
+            let area = document.getElementById('custArea').value;
+            let address = document.getElementById('custAddress').value;
+
+            let subtotal = cart.reduce((sum, item) => sum + (parseInt((item.salePrice||item.price).toString().replace(/[^0-9]/g, '')) * item.qty), 0);
+            let total = subtotal + deliveryFee;
+
+            let orderId = 'ORD-' + Math.floor(100000 + Math.random() * 900000);
+
+            db.collection("orders").doc(orderId).set({
+                orderId: orderId,
+                userId: currentUser ? currentUser.uid : 'guest',
+                email: currentUser ? currentUser.email : 'guest@store.com',
+                name: name,
+                phone: phone,
+                city: city,
+                area: area,
+                address: address,
+                items: cart,
+                totalAmount: total,
+                paymentMethod: "Cash on Delivery",
+                status: "Pending",
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                clearCart();
+                closeCheckoutModal();
+                showToast(`Order #${orderId} placed successfully via COD!`);
+            });
+        }
+
+        // ADMIN LOGIC
+        window.openAdminLogin = function() { document.getElementById('adminModal').classList.remove('hidden'); }
+        window.closeAdminModal = function() { document.getElementById('adminModal').classList.add('hidden'); }
+
+        window.verifyAdmin = function() {
+            if (document.getElementById('adminPassInput').value === "0101") {
+                document.getElementById('adminLoginForm').classList.add('hidden');
+                document.getElementById('adminDashboard').classList.remove('hidden');
+            } else showToast("Incorrect Password!");
+        }
+
+        window.switchAdminTab = function(tab) {
+            document.getElementById('admSectionOrders').classList.add('hidden');
+            document.getElementById('admSectionProducts').classList.add('hidden');
+            document.getElementById('admSectionMessages').classList.add('hidden');
+            document.getElementById('admSectionSettings').classList.add('hidden');
+
+            document.getElementById('admTabOrders').className = "px-3 py-2 rounded-xl font-bold bg-gray-100 text-gray-700 shrink-0";
+            document.getElementById('admTabProds').className = "px-3 py-2 rounded-xl font-bold bg-gray-100 text-gray-700 shrink-0";
+            document.getElementById('admTabMsgs').className = "px-3 py-2 rounded-xl font-bold bg-gray-100 text-gray-700 shrink-0";
+            document.getElementById('admTabSettings').className = "px-3 py-2 rounded-xl font-bold bg-gray-100 text-gray-700 shrink-0";
+
+            if(tab==='orders') {
+                document.getElementById('admSectionOrders').classList.remove('hidden');
+                document.getElementById('admTabOrders').className = "px-3 py-2 rounded-xl font-bold bg-indigo-600 text-white shrink-0";
+            }
+            if(tab==='products') {
+                document.getElementById('admSectionProducts').classList.remove('hidden');
+                document.getElementById('admTabProds').className = "px-3 py-2 rounded-xl font-bold bg-indigo-600 text-white shrink-0";
+            }
+            if(tab==='messages') {
+                document.getElementById('admSectionMessages').classList.remove('hidden');
+                document.getElementById('admTabMsgs').className = "px-3 py-2 rounded-xl font-bold bg-indigo-600 text-white shrink-0";
+            }
+            if(tab==='settings') {
+                document.getElementById('admSectionSettings').classList.remove('hidden');
+                document.getElementById('admTabSettings').className = "px-3 py-2 rounded-xl font-bold bg-indigo-600 text-white shrink-0";
+            }
+        }
+
+        function calculateAdminMetrics() {
+            document.getElementById('metricTotalOrders').innerText = orders.length;
+            let sales = orders.filter(o => o.status==='Delivered').reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+            document.getElementById('metricTotalSales').innerText = `Rs ${sales.toLocaleString()}`;
+            document.getElementById('metricPendingOrders').innerText = orders.filter(o => o.status==='Pending').length;
+        }
+
+        function renderAdminOrders() {
+            let list = document.getElementById('adminOrdersList');
+            if(!list) return;
+            list.innerHTML = '';
+            orders.forEach(order => {
+                let itemsListHtml = '';
+                if (order.items && order.items.length > 0) {
+                    order.items.forEach(p => {
+                        itemsListHtml += `
+                            <div class="bg-white p-2 rounded border my-1 text-[11px] space-y-0.5">
+                                <p class="font-bold text-indigo-900">• ${p.name}</p>
+                                <p><strong>Price:</strong> ${p.price} | <strong>Sale Price:</strong> ${p.salePrice || 'N/A'}</p>
+                                <p><strong>Category:</strong> ${p.category || 'Toys'}</p>
+                                <p><strong>Qty:</strong> ${p.qty || 1}</p>
+                            </div>
+                        `;
+                    });
+                }
+
+                list.innerHTML += `
+                    <div class="p-3 bg-gray-50 rounded-xl border text-xs space-y-2">
+                        <div class="flex justify-between font-bold">
+                            <span>ID: ${order.orderId || order.id} | ${order.name}</span>
+                            <span class="text-emerald-600">${order.status || 'Pending'}</span>
+                        </div>
+                        <p class="text-gray-600">Email: ${order.email || 'Guest'} | Phone: ${order.phone} | Address: ${order.address}, ${order.city}</p>
+                        <p class="font-bold text-gray-700">Ordered Product Details:</p>
+                        ${itemsListHtml}
+                        <div class="flex items-center space-x-2 pt-1">
+                            <select onchange="updateOrderStatus('${order.id}', this.value)" class="text-[11px] border rounded p-1">
+                                <option value="Pending" ${order.status==='Pending'?'selected':''}>Pending</option>
+                                <option value="Confirmed" ${order.status==='Confirmed'?'selected':''}>Confirmed</option>
+                                <option value="Shipped" ${order.status==='Shipped'?'selected':''}>Shipped</option>
+                                <option value="Out for Delivery" ${order.status==='Out for Delivery'?'selected':''}>Out for Delivery</option>
+                                <option value="Delivered" ${order.status==='Delivered'?'selected':''}>Delivered</option>
+                                <option value="Cancelled" ${order.status==='Cancelled'?'selected':''}>Cancelled</option>
+                            </select>
+                            <button onclick="deleteOrder('${order.id}')" class="text-red-500 font-bold">Delete</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderAdminMessages() {
+            let list = document.getElementById('adminMessagesList');
+            if(!list) return;
+            list.innerHTML = '';
+            if(messagesList.length === 0) {
+                list.innerHTML = `<p class="text-center text-gray-400 py-6 text-xs">Koi customer message nahi aya.</p>`;
+                return;
+            }
+            messagesList.forEach(m => {
+                list.innerHTML += `
+                    <div class="p-3 bg-gray-50 rounded-xl border text-xs space-y-1">
+                        <div class="flex justify-between font-bold text-indigo-950">
+                            <span>👤 ${m.name}</span>
+                            <button onclick="deleteMessage('${m.id}')" class="text-red-500">Delete</button>
+                        </div>
+                        <p class="text-gray-700 bg-white p-2 rounded border">${m.message}</p>
+                    </div>
+                `;
+            });
+        }
+
+        window.deleteMessage = function(id) {
+            db.collection("messages").doc(id).delete().then(() => showToast("Message deleted!"));
+        }
+
+        window.updateOrderStatus = function(id, val) { db.collection("orders").doc(id).update({ status: val }); }
+        window.deleteOrder = function(id) { if(confirm("Delete Order?")) db.collection("orders").doc(id).delete(); }
+
+        window.addNewProductToFirebase = function(e) {
+            e.preventDefault();
+            let file = document.getElementById('newProdFile').files[0];
+            if(!file) return;
+
+            let reader = new FileReader();
+            reader.onload = function(evt) {
+                db.collection("toys").add({
+                    name: document.getElementById('newProdName').value,
+                    price: `Rs ${document.getElementById('newProdPrice').value}`,
+                    salePrice: document.getElementById('newProdSalePrice').value ? `Rs ${document.getElementById('newProdSalePrice').value}` : '',
+                    category: document.getElementById('newProdCategory').value,
+                    stockStatus: document.getElementById('newProdStock').value,
+                    stockAvailable: document.getElementById('newProdStock').value === 'In Stock',
+                    description: document.getElementById('newProdDesc').value,
+                    image: evt.target.result,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                }).then(() => showToast("Product Added Successfully to Firebase Firestore & AI Synced!"));
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function renderAdminProductList() {
+            let list = document.getElementById('adminProductList');
+            if(!list) return;
+            list.innerHTML = '';
+            products.forEach(p => {
+                list.innerHTML += `
+                    <div class="flex justify-between items-center p-2 bg-gray-50 border rounded text-xs">
+                        <span>${p.name} [${p.category || 'Toys'}] (${p.price}) - ${p.stockStatus || 'In Stock'}</span>
+                        <button onclick="deleteProduct('${p.id}')" class="text-red-500 font-bold">Delete</button>
+                    </div>
+                `;
+            });
+        }
+
+        window.deleteProduct = function(id) { db.collection("toys").doc(id).delete(); }
+
+        window.saveDeliveryFee = function() {
+            let val = parseInt(document.getElementById('settingDeliveryFee').value);
+            if (!isNaN(val)) {
+                deliveryFee = val;
+                showToast("Delivery fee updated!");
+                renderCartItems();
+            }
+        }
+
+        // --- ROBUST HYBRID ADVANCED AI ASSISTANT ENGINE (FIREBASE & PROXY FALLBACK) ---
+        window.toggleChat = function() {
+            let box = document.getElementById('ai-chat-box');
+            box.style.display = box.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        window.sendMessage = async function() {
+            let input = document.getElementById('ai-user-input');
+            let text = input.value.trim();
+            if(!text) return;
+            let container = document.getElementById('ai-chat-messages');
+            container.innerHTML += `<div class="ai-msg user-message">${text}</div>`;
+            input.value = '';
+
+            container.scrollTop = container.scrollHeight;
+
+            let loadingId = 'loading-' + Date.now();
+            container.innerHTML += `<div id="${loadingId}" class="ai-msg ai-message">Soch raha hoon... 🤖</div>`;
+            container.scrollTop = container.scrollHeight;
+
+            let botReply = "";
+
+            try {
+                let productsContext = products.map(p => `- ${p.name}: Price: ${p.salePrice || p.price}, Category: ${p.category || 'Toys'}, Stock: ${p.stockStatus || 'In Stock'}, Description: ${p.description || 'N/A'}`).join('\n');
+                
+                let systemInstruction = `You are the official Advanced Smart AI Assistant for "A&M Online Store" (Website: https://azanmahan167.github.io/A-M-online-shop/). 
+                The store features categories: Toys, Grocery, Stationery, and Electronic Things.
+                You respond warmly to greetings like "Hello", "Hey", "Assalam-o-Alaikum", "kaisa ho", "kya haal hai".
+                Helpline WhatsApp number: 03137221362.
+                Payment Method: Cash on Delivery (COD) only.
+                Order Steps: User adds products to cart, clicks cart icon, clicks Proceed to Checkout, fills out name, phone, city, area, address, and clicks Place Order Now.
+                Delivery Charges: Rs ${deliveryFee}.
+                Store Return Policy: Strict No-Return policy, but return is accepted IF an unboxing video proving damage or wrong item is provided.
+                Complete Real-Time Products Database (Synced from Firebase Firestore):
+                ${productsContext}
+                
+                Keep your answers helpful, friendly, polite, concise, and formatted with emojis. Reply in Roman Urdu or English matching the user's language. Always answer any general or specific query accurately with advanced capability.`;
+
+                const response = await ai.models.generateContent({
+                    model: 'gemini-2.5-flash',
+                    contents: text,
+                    config: {
+                        systemInstruction: systemInstruction,
+                        temperature: 0.7,
+                    }
+                });
+
+                botReply = response.text;
+            } catch (err) {
+                console.warn("Direct API blocked/failed, using advanced fallback rules.", err);
+            }
+
+            if (!botReply) {
+                botReply = getAdvancedSmartBotResponse(text);
+            }
+                
+            document.getElementById(loadingId).remove();
+            container.innerHTML += `<div class="ai-msg ai-message">${botReply}</div>`;
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function getAdvancedSmartBotResponse(query) {
+            let q = query.toLowerCase();
+            
+            if (q.includes('hello') || q.includes('hey') || q.includes('assalam') || q.includes('salam')) {
+                return "Walaikumsalam! A&M Online Store mein khush amdeed 🧸. Hamare paas Toys, Grocery, Stationery aur Electronic Things available hain. Bataiye aaj aapko kya chahiye?";
+            }
+            if (q.includes('kaisa ho') || q.includes('kya haal') || q.includes('how are you')) {
+                return "Main ek Advanced AI Assistant hoon aur aap ki khidmat ke liye hamesha tayar hoon! Aap batayein aap kaise hain aur store par kya dekhna chahenge? 😊";
+            }
+            if (q.includes('kaun ho') || q.includes('who are you') || q.includes('introduce')) {
+                return "Main A&M Online Store ka Advanced Smart AI Assistant hoon jo aap ki shopping, order placement aur product selection mein madad karta hoon! 🚀";
+            }
+
+            if (q.includes('toy') || q.includes('khilona') || q.includes('bacho')) {
+                return "🧸 **Toys Category:** Hamare paas bacho ke liye behtareen toys aur games available hain jo aap direct cart mein add kar sakte hain!";
+            }
+            if (q.includes('grocery') || q.includes('ration') || q.includes('khane peene')) {
+                return "🛒 **Grocery Category:** Behtareen grocery items available hain jo aap Cash on Delivery par mangwa sakte hain!";
+            }
+            if (q.includes('stationery') || q.includes('pens') || q.includes('notebook') || q.includes('school')) {
+                return "📚 **Stationery Category:** School aur office ke liye tamam stationery items available hain!";
+            }
+            if (q.includes('electronic') || q.includes('gadgets') || q.includes('devices') || q.includes('bijli')) {
+                return "⚡ **Electronic Things:** Useful electronic gadgets aur devices hamare store par available hain!";
+            }
+
+            if (q.includes('order') || q.includes('tariqa') || q.includes('kaise karein')) {
+                return "🛍️ **Order Karne Ka Asaan Tariqa:**\n1. Apni pasand ka product chun kar 'Add to Cart' ya 'Buy Now' dabayein.\n2. Upar diye gaye **Cart** icon par click karein.\n3. 'Proceed to Checkout' par click karke apna Naam, WhatsApp Number, City, aur Complete Address likhein.\n4. 'Place Order Now' dabate hi aapka order Cash on Delivery (COD) par confirm ho jayega! 📦";
+            }
+            if (q.includes('payment') || q.includes('paisa') || q.includes('jazzcash') || q.includes('easypaisa')) {
+                return "💵 Hamare store par sirf **Cash on Delivery (COD)** ki sahulat available hai. Jab order aapke ghar pohnchega tab aap courier ko cash pay karenge.";
+            }
+
+            if (q.includes('helpline') || q.includes('number') || q.includes('whatsapp') || q.includes('rabta')) {
+                return "📞 Aap hum se WhatsApp par direct rabta kar sakte hain:\nOfficial Helpline: **03137221362** ( ya click karein: https://wa.me/923137221362 ) 💬";
+            }
+            if (q.includes('link') || q.includes('website') || q.includes('site')) {
+                return "🔗 Hamari official website ka link yeh hai: https://azanmahan167.github.io/A-M-online-shop/";
+            }
+
+            if (q.includes('return') || q.includes('wapsi') || q.includes('refund') || q.includes('exchange')) {
+                return "🔄 **Return Policy:** Hamari strict No-Return policy hai, lekin agar aapke paas **unboxing video** maujood hai jisme item damaged ya galat nikle, toh hum return/exchange accept kar lete hain!";
+            }
+            if (q.includes('delivery') || q.includes('shipping') || q.includes('charges') || q.includes('din')) {
+                return "🚚 Delivery poore Pakistan mein 2 se 4 working days mein ho jati hai. Standard delivery charges **Rs " + deliveryFee + "** hain.";
+            }
+
+            let matchedProd = products.find(p => q.includes(p.name.toLowerCase()) || (p.category && q.includes(p.category.toLowerCase())));
+            if (matchedProd) {
+                return `📦 **${matchedProd.name}**\n- Category: ${matchedProd.category || 'Toys'}\n- Price: ${matchedProd.salePrice || matchedProd.price}\n- Status: ${matchedProd.stockStatus || 'In Stock'}\n\nAap ise cart mein add karke foran order kar sakte hain! 🚀`;
+            }
+
+            if (q.includes('price') || q.includes('qimat') || q.includes('rate')) {
+                let listStr = products.slice(0, 5).map(p => `• ${p.name} [${p.category || 'Toys'}]: ${p.salePrice || p.price}`).join('\n');
+                return `📦 Yeh hamare kuch popular items hain:\n${listStr}\nAap mazeed items ke liye website ka catalog check kar sakte hain!`;
+            }
+
+            return `🧸 A&M Online Store par khush amdeed! Hamare paas Toys, Grocery, Stationery aur Electronic Things Cash on Delivery par available hain. Mazeed maloomat ke liye helpline **03137221362** par rabta karein! 🚀`;
+        }
+
+        window.openPolicyModal = function(type) {
+            let title = "Store Policy";
+            let text = "Store Terms and Information.";
+            if(type==='return') { title="Return & Refund Policy"; text="Strict No-Return policy. Return or exchange is ONLY accepted if an unboxing video is provided showing damaged or incorrect item."; }
+            if(type==='shipping' || type==='delivery') { title="Delivery Information"; text=`Delivery within 2-4 working days across Pakistan. Standard delivery charges are Rs ${deliveryFee}.`; }
+            if(type==='cod') { title="COD Information"; text="Only Cash on Delivery (COD) is available. Pay cash at the time of delivery to courier."; }
+            if(type==='cancellation') { title="Cancellation Policy"; text="Orders can be cancelled before shipping by contacting helpline 03137221362."; }
+            if(type==='privacy') { title="Privacy Policy"; text="Customer data is fully secured with Firebase security rules."; }
+            if(type==='faq') { title="FAQ & Contact"; text="Website: https://azanmahan167.github.io/A-M-online-shop/ | WhatsApp Support: 03137221362 | Store Timings: 10 AM - 10 PM"; }
+
+            document.getElementById('policyModalTitle').innerText = title;
+            document.getElementById('policyModalText').innerText = text;
+            document.getElementById('policyModal').classList.remove('hidden');
+        }
+        window.closePolicyModal = function() { document.getElementById('policyModal').classList.add('hidden'); }
+    </script>
+</body>
+</html>
